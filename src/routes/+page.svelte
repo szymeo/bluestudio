@@ -1,6 +1,4 @@
 <script lang="ts">
-	import ArrowLeft from '$lib/shared/icons/ArrowLeft.svelte';
-	import './global.css';
 	import { invoke } from '@tauri-apps/api/core';
 
 	let name = $state('');
