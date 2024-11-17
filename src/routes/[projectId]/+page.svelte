@@ -1,8 +1,9 @@
 <script>
 	import { goto } from '$app/navigation';
-	import MediaExplorer from '$lib/media/MediaExplorer.svelte';
-	import FilesExplorer from '$lib/shared/components/files-explorer/FilesExplorer.svelte';
+	import ProjectFilesManager from '$lib/media/ProjectFilesManager.svelte';
+	import Player from '$lib/player/Player.svelte';
 	import ArrowLeft from '$lib/shared/icons/ArrowLeftIcon.svelte';
+	import Timeline from '$lib/timeline/Timeline.svelte';
 </script>
 
 <main class="w-full flex flex-col pt-7 h-full text-white">
@@ -24,12 +25,17 @@
 	</div>
 
 	<div class="w-full h-full grid grid-cols-2 grid-rows-2 px-3 py-3 gap-2">
-		<div class="bg-gray-900 rounded-md overflow-hidden">
-			<MediaExplorer />
+		<div class="bg-gray-900 rounded-md overflow-hidden select-none">
+			<ProjectFilesManager />
 		</div>
-		<div class="bg-gray-900 rounded-md"></div>
 
-		<div class="col-span-2 bg-gray-900 rounded-md"></div>
+		<div class="bg-gray-900 rounded-md select-none">
+			<Player />
+		</div>
+
+		<div class="col-span-2 bg-gray-900 rounded-md select-none">
+			<Timeline />
+		</div>
 	</div>
 </main>
 

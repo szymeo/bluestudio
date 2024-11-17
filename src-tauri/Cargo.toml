@@ -25,6 +25,7 @@ serde_json = "1"
 diesel = { version = "2.2.4", features = ["sqlite", "chrono", "r2d2", "numeric", "returning_clauses_for_sqlite_3_35"] }
 dotenvy = "0.15.7"
 tauri-plugin-fs = "2.0.3"
+ffmpeg-next = "7.1.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
