@@ -8,6 +8,7 @@
 
 	type Project = {
 		id: string;
+		name: string;
 	};
 
 	function getProjects(): Promise<Project[]> {

@@ -1,5 +1,7 @@
 <script lang="ts">
-	const tracks: Track[] = $state([]);
+	import type { TimelineTrack } from '$lib/shared/media/domain/timeline-track';
+
+	const tracks: TimelineTrack[] = $state([]);
 </script>
 
 {#each tracks as track}
