@@ -24,6 +24,13 @@ dotenvy = "0.15.7"
 tauri-plugin-fs = "2.0.3"
 ffmpeg-next = "7.0.1"
 image = "0.25.5"
+log = "0.4"
+uuid = "1.11.0"
+chrono = { version = "0.4.38", features = ["serde"] }
+bigdecimal = { version = "0.4.5", features = ["serde"] }
+thiserror = "2.0.3"
+diesel_migrations = { version = "2.2", features = ["sqlite"] }
+r2d2 = "0.8.10"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

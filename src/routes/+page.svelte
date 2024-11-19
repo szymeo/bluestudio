@@ -9,6 +9,8 @@
 	type Project = {
 		id: string;
 		name: string;
+		created_at: string;
+		updated_at: string;
 	};
 
 	function getProjects(): Promise<Project[]> {
@@ -17,7 +19,11 @@
 
 	let projects: Project[] = $state([]);
 
-	function createProject() {}
+	async function createProject() {
+		alert('Creating a new project');
+		const r = await invoke<Project>('create_project', { name: 'New Project' });
+		console.log(r);
+	}
 
 	onMount(async () => {
 		projects = await getProjects();
@@ -60,7 +66,7 @@
 
 				<li
 					class="flex items-center gap-2 cursor-pointer bg-blue-700 font-semibold flex-col w-fit p-4 rounded-md"
-					onclick={() => {}}
+					onclick={createProject}
 				>
 					<VideoIcon class="w-7 h-7" stroke="stroke-white" />
 					<span>New Project</span>
