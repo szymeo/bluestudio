@@ -5,12 +5,14 @@
 	import VideoLibraryIcon from '$lib/shared/icons/VideoLibraryIcon.svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import dayjs from 'dayjs';
 
 	type Project = {
 		id: string;
 		name: string;
-		created_at: string;
-		updated_at: string;
+		createdAt: string;
+		updatedAt: string;
 	};
 
 	function getProjects(): Promise<Project[]> {
@@ -28,6 +30,8 @@
 	onMount(async () => {
 		projects = await getProjects();
 	});
+
+	$inspect(projects);
 </script>
 
 <main class="w-full flex flex-col h-full text-white">
@@ -50,28 +54,58 @@
 			</span>
 		</div>
 
-		<div class="w-2/3 h-full bg-gray-800 p-6">
-			<h2 class="text-2xl font-semibold flex items-center gap-1.5">
+		<div class="divider"></div>
+
+		<div class="w-2/3 h-full bg-gray-900 px-20 py-12">
+			<h2 class="text-2xl font-semibold flex items-center gap-2">
 				Projects
 
-				<VideoLibraryIcon class="w-7 h-7" stroke="stroke-gray-100" />
+				<!-- <VideoLibraryIcon class="w-6 h-6" stroke="stroke-gray-100" /> -->
 			</h2>
-			<ul class="mt-6">
-				{#each projects as project}
-					<li class="flex items-center gap-2 cursor-pointer">
-						<FolderIcon class="w-4 h-4" />
-						<span>{project.name}</span>
+
+			<div class="mt-6">
+				{#each projects as project, index}
+					<li
+						onclick={() => goto(`/${project.id}`)}
+						class="flex hover:bg-gray-300/10 w-full rounded-xs py-1 items-center cursor-pointer gap-1.5"
+					>
+						<LogoIcon class="w-5 h-5 mr-1" />
+						<span class="text-sm">{project.name}</span>
+						<span class="text-xs text-gray-400 ml-2">
+							{dayjs(new Date(project.createdAt)).format('DD MMM YY HH:mm')}
+						</span>
 					</li>
 				{/each}
 
 				<li
-					class="flex items-center gap-2 cursor-pointer bg-blue-700 font-semibold flex-col w-fit p-4 rounded-md"
+					class="flex border-gray-100/20 mt-4 pt-2 transition-all pl-2 border-t w-full py-1 items-center cursor-pointer gap-1.5"
 					onclick={createProject}
 				>
-					<VideoIcon class="w-7 h-7" stroke="stroke-white" />
-					<span>New Project</span>
+					<!-- <VideoIcon class="w-7 h-7" stroke="stroke-white" /> -->
+					<span>+ Create Project</span>
 				</li>
-			</ul>
+			</div>
 		</div>
 	</div>
 </main>
+
+<style lang="scss">
+	.divider {
+		width: 1px;
+		background: linear-gradient(to bottom, #ef587a, #614da3, #db8c21);
+		position: relative;
+		opacity: 0.8;
+
+		&::after {
+			content: '';
+			position: absolute;
+			filter: blur(20px);
+			opacity: 0.5;
+			background: linear-gradient(to bottom, #ef587a, #614da3, #db8c21);
+			top: 0;
+			left: 100%;
+			width: 10px; // Adjust the width of the shadow
+			height: 100%;
+		}
+	}
+</style>

@@ -23,8 +23,7 @@ impl ProjectsRepository {
         &self,
         conn: &mut SqliteConnection,
     ) -> Result<Vec<Project>, diesel::result::Error> {
-        // projects.order(created_at.desc()).load::<Project>(conn)
-        projects.load::<Project>(conn)
+        projects.order(created_at.desc()).load::<Project>(conn)
     }
 
     pub fn insert_project(

@@ -5,7 +5,7 @@
 	import DistinguishedFileIcon from '$lib/shared/components/files-explorer/DistinguishedFileIcon.svelte';
 	import { type FileInfo } from '$lib/shared/components/files-explorer/FileInfo';
 	import { page } from '$app/stores';
-	import { timelineState } from '$lib/shared/media/application/timeline.state.svelte';
+	// import { timelineState } from '$lib/shared/media/application/timeline.state.svelte';
 	import { TimelineTrackType } from '$lib/shared/media/domain/timeline-track';
 	import { invoke } from '@tauri-apps/api/core';
 

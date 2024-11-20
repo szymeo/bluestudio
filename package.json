@@ -16,6 +16,7 @@
   "dependencies": {
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-shell": "^2",
+    "dayjs": "^1.11.13",
     "svelte-ux": "^0.75.4"
   },
   "devDependencies": {

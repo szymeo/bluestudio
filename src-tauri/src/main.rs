@@ -73,6 +73,7 @@ fn main() {
             bff::commands::files::list_files,
             bff::commands::parse_video::parse_video,
             bff::commands::projects::create_project,
+            bff::commands::projects::get_projects,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
