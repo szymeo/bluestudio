@@ -4,9 +4,11 @@
 	import Player from '$lib/player/Player.svelte';
 	import ArrowLeft from '$lib/shared/icons/ArrowLeftIcon.svelte';
 	import Timeline from '$lib/timeline/Timeline.svelte';
+	import { page } from '$app/stores';
+	const { projectId } = $page.params;
 </script>
 
-<main class="w-full flex flex-col pt-7 h-full text-white">
+<main class="w-full flex flex-col pt-7 h-full text-white select-none">
 	<div
 		data-tauri-drag-region="true"
 		class="draggable absolute top-0 h-7 w-full px-20 flex items-center justify-center bg-gray-800"
@@ -20,7 +22,7 @@
 		</button>
 
 		<span class="block text-xs text-gray-400 font-bold font-sans pointer-events-none">
-			Project 1
+			Untitled Project ({projectId})
 		</span>
 	</div>
 

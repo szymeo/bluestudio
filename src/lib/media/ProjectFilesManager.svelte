@@ -8,6 +8,7 @@
 	// import { timelineState } from '$lib/shared/media/application/timeline.state.svelte';
 	import { TimelineTrackType } from '$lib/shared/media/domain/timeline-track';
 	import { invoke } from '@tauri-apps/api/core';
+	import { onMount } from 'svelte';
 
 	const { projectId } = $page.params;
 	const LS_KEY = `bluestudio-${projectId}-project-files`;
@@ -15,6 +16,18 @@
 	function getProjectFiles() {
 		const projectFiles = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
 		return projectFiles;
+	}
+
+	function onImportFilesClicked() {
+		filesSelectedForImport.forEach((file) => {
+			if (!projectFiles.some((f) => f.path === file.path)) {
+				invoke('create_project_file', { projectId, path: file.path }).then((info) => {
+					console.log('added file', info);
+
+					projectFiles.push(file);
+				});
+			}
+		});
 	}
 
 	function addFilesToTimeline(files: FileInfo[]) {
@@ -38,8 +51,12 @@
 	let selectedImportedFiles: FileInfo[] = $state([]);
 	let projectFiles: FileInfo[] = $state(getProjectFiles());
 
-	$effect(() => {
-		localStorage.setItem(LS_KEY, JSON.stringify(projectFiles));
+	onMount(() => {
+		invoke('get_project_files', { projectId }).then((files) => {
+			console.log('project files', files);
+
+			// projectFiles = files;
+		});
 	});
 </script>
 
@@ -63,10 +80,7 @@
 						'text-white': filesSelectedForImport.length > 0
 					}
 				)}
-				onclick={() => {
-					projectFiles = projectFiles.concat(filesSelectedForImport);
-					filesExplorer.clearSelection();
-				}}
+				onclick={onImportFilesClicked}
 			>
 				{#if filesSelectedForImport.length > 0}
 					<span>Import {filesSelectedForImport.length} selected files</span>

@@ -41,7 +41,7 @@
 	></div>
 
 	<div class="w-full h-full flex">
-		<div class="w-1/3 flex flex-col h-full bg-gray-900 py-20 px-4">
+		<div class="w-1/3 flex flex-col h-full bg-gray-900 py-20 px-8">
 			<h1 class="text-4xl font-mono justify-start w-full flex items-center h-fit">
 				<LogoIcon class="w-12 h-12 mr-1" />
 				BlueStudio
@@ -90,22 +90,38 @@
 </main>
 
 <style lang="scss">
+	@keyframes gradientAnimation {
+		0% {
+			background-position: 0% 0%;
+		}
+		50% {
+			background-position: 0% -100%;
+		}
+		100% {
+			background-position: 0% -200%;
+		}
+	}
+
 	.divider {
 		width: 1px;
 		background: linear-gradient(to bottom, #ef587a, #614da3, #db8c21);
+		background-size: 100% 200%;
 		position: relative;
-		opacity: 0.8;
+		opacity: 0.9;
+		animation: gradientAnimation 5s ease infinite;
 
 		&::after {
 			content: '';
 			position: absolute;
 			filter: blur(20px);
-			opacity: 0.5;
+			opacity: 0.25;
 			background: linear-gradient(to bottom, #ef587a, #614da3, #db8c21);
+			background-size: 100% 200%;
 			top: 0;
 			left: 100%;
 			width: 10px; // Adjust the width of the shadow
 			height: 100%;
+			animation: gradientAnimation 5s ease infinite;
 		}
 	}
 </style>

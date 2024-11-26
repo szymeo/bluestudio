@@ -3,13 +3,13 @@ use std::fs;
 use std::path::PathBuf;
 
 #[derive(Serialize)]
-pub struct FileInfo {
+pub struct FSDirEntry {
     name: String,
     path: String,
     is_dir: bool,
 }
 
-pub fn list_dir(dir: String) -> Result<Vec<FileInfo>, String> {
+pub fn list_dir(dir: String) -> Result<Vec<FSDirEntry>, String> {
     let path = PathBuf::from(dir);
     let mut files = Vec::new();
 
@@ -23,7 +23,7 @@ pub fn list_dir(dir: String) -> Result<Vec<FileInfo>, String> {
                 .map_err(|e| e.to_string_lossy().into_owned())?;
             let is_dir = path.is_dir();
 
-            files.push(FileInfo {
+            files.push(FSDirEntry {
                 name,
                 path: path.to_string_lossy().into_owned(),
                 is_dir,
