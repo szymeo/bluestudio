@@ -11,7 +11,7 @@
 
 	const { name } = $props();
 
-	const fileType = name.split('.').pop();
+	const fileType = name?.split('.').pop();
 </script>
 
 {#if fileType}

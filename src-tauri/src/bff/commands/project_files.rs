@@ -6,11 +6,11 @@ use log::debug;
 use tauri::State;
 
 #[tauri::command]
-pub fn get_project_files(
+pub async fn get_project_files(
     project_id: String,
     state: State<'_, AppState>,
 ) -> Result<Vec<ProjectFileQuery>, String> {
-    debug!("Getting project files...");
+    print!("Getting project files...");
     let mut conn = state
         .pool
         .get()
@@ -19,6 +19,7 @@ pub fn get_project_files(
     let service = ProjectFilesService::new();
     service
         .get_project_files(&mut conn, &project_id)
+        .await
         .map_err(|e| format!("Failed to get project files: {}", e))
 }
 
@@ -28,7 +29,7 @@ pub async fn create_project_file(
     path: String,
     state: State<'_, AppState>,
 ) -> Result<ProjectFile, String> {
-    debug!("Adding new project file...");
+    print!("Adding new project file...");
     let mut conn = state
         .pool
         .get()

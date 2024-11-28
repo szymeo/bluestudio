@@ -26,16 +26,13 @@
 		</span>
 	</div>
 
-	<div class="w-full h-full grid grid-cols-2 grid-rows-2 px-3 py-3 gap-2">
-		<div class="bg-gray-900 rounded-md overflow-hidden select-none">
+	<div class="w-full h-full flex flex-col px-3 py-3 gap-2">
+		<div class="bg-gray-900 flex items-center justify-center rounded-md select-none h-1/3">
 			<ProjectFilesManager />
-		</div>
-
-		<div class="bg-gray-900 rounded-md select-none">
 			<Player />
 		</div>
 
-		<div class="col-span-2 bg-gray-900 rounded-md select-none">
+		<div class="col-span-2 bg-gray-900 rounded-md h-full select-none">
 			<Timeline />
 		</div>
 	</div>

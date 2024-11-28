@@ -3,67 +3,67 @@
 	import FilesExplorer from '$lib/shared/components/files-explorer/FilesExplorer.svelte';
 	import FileRow from '$lib/shared/components/files-explorer/FileRow.svelte';
 	import DistinguishedFileIcon from '$lib/shared/components/files-explorer/DistinguishedFileIcon.svelte';
-	import { type FileInfo } from '$lib/shared/components/files-explorer/FileInfo';
+	import {
+		type FSDirEntry,
+		type ProjectFile,
+		type RawProjectFile
+	} from '$lib/shared/components/files-explorer/files.model';
+	import { type Miliseconds } from '$lib/shared/types';
 	import { page } from '$app/stores';
-	// import { timelineState } from '$lib/shared/media/application/timeline.state.svelte';
-	import { TimelineTrackType } from '$lib/shared/media/domain/timeline-track';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 
 	const { projectId } = $page.params;
-	const LS_KEY = `bluestudio-${projectId}-project-files`;
-
-	function getProjectFiles() {
-		const projectFiles = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-		return projectFiles;
-	}
 
 	function onImportFilesClicked() {
 		filesSelectedForImport.forEach((file) => {
 			if (!projectFiles.some((f) => f.path === file.path)) {
-				invoke('create_project_file', { projectId, path: file.path }).then((info) => {
-					console.log('added file', info);
+				invoke<ProjectFile>('create_project_file', { projectId, path: file.path }).then(
+					(projectFile) => {
+						console.log('added file', projectFile);
 
-					projectFiles.push(file);
-				});
+						projectFiles.push(projectFile);
+					}
+				);
 			}
 		});
 	}
 
-	function addFilesToTimeline(files: FileInfo[]) {
-		function process_video(file: FileInfo) {
-			const track = {
-				type: TimelineTrackType.VIDEO,
-				start: 0,
-				end: 0,
-				frames: [file.path]
-			};
-		}
-	}
-
-	async function extractFramesFromVideo(videoUrl: string) {
-		const frames = await invoke<string[]>('extract_frames_from_video', { videoUrl });
-		return frames;
-	}
-
-	let filesExplorer: FilesExplorer;
-	let filesSelectedForImport: FileInfo[] = $state([]);
-	let selectedImportedFiles: FileInfo[] = $state([]);
-	let projectFiles: FileInfo[] = $state(getProjectFiles());
+	let filesSelectedForImport: FSDirEntry[] = $state([]);
+	let selectedImportedFiles: FSDirEntry[] = $state([]);
+	let projectFiles: ProjectFile[] = $state([]);
 
 	onMount(() => {
-		invoke('get_project_files', { projectId }).then((files) => {
-			console.log('project files', files);
+		console.log('getting project files for', projectId);
 
-			// projectFiles = files;
+		invoke<RawProjectFile[]>('get_project_files', { projectId }).then((files) => {
+			console.log('got project files', files);
+
+			projectFiles = files.map((file) => ({
+				...file.project_file,
+				frames: file.frames,
+				duration: file.duration as Miliseconds
+			}));
 		});
 	});
+
+	function formatTimeWithFrames(totalSeconds: number, fps: number): string {
+		const hours: number = Math.floor(totalSeconds / 3600);
+		const minutes: number = Math.floor((totalSeconds % 3600) / 60);
+		const seconds: number = Math.floor(totalSeconds % 60);
+
+		const frames: number = Math.floor((totalSeconds % 1) * fps);
+
+		const pad = (num: number, size: number): string => num.toString().padStart(size, '0');
+
+		return `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}:${pad(frames, 2)}`;
+	}
 </script>
 
-<div class="w-full flex h-full select-none">
+<div class="flex w-full h-full select-none">
 	<div class="w-1/2 flex flex-col">
 		<div class="flex-1 h-full overflow-auto">
-			<FilesExplorer bind:this={filesExplorer} bind:selectedFiles={filesSelectedForImport} />
+			<FilesExplorer bind:selectedFiles={filesSelectedForImport} />
 		</div>
 
 		<div
@@ -114,23 +114,37 @@
 										(_file) => _file.path !== file.path
 									);
 								} else {
-									selectedImportedFiles.push(file);
+									// selectedImportedFiles.push(file);
 								}
 							}}
 						>
-							<DistinguishedFileIcon name={file.name} />
-							{file.name}
+							<div class="flex gap-1.5">
+								<DistinguishedFileIcon name={file.name} />
+								{file.name}
+							</div>
+							|
+							<div>
+								{file.frames.length} frames
+							</div>
+							|
+							<div>
+								{formatTimeWithFrames(file.duration / 1000, file.frames.length)} duration
+							</div>
+							|
+							<div>
+								{file.frames.length / (file.duration / 1000)} fps
+							</div>
 						</FileRow>
 						<!-- <div class="flex items center gap-2">
-                        <span class="text-gray-400"></span>
-                        <button
-                            class="text-xs text-gray-400"
-                            onclick={() =>
-                                (importedFiles = importedFiles.filter((f) => f !== file))}
-                        >
-                            Remove
-                        </button>
-                    </div> -->
+							<span class="text-gray-400"></span>
+							<button
+								class="text-xs text-gray-400"
+								onclick={() =>
+									(importedFiles = importedFiles.filter((f) => f !== file))}
+							>
+								Remove
+							</button>
+						</div> -->
 					{/each}
 
 					<div
@@ -148,7 +162,7 @@
 								}
 							)}
 							onclick={() => {
-								addFilesToTimeline(selectedImportedFiles);
+								// addFilesToTimeline(selectedImportedFiles);
 							}}
 						>
 							{#if selectedImportedFiles.length > 0}

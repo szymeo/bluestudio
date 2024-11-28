@@ -3,10 +3,10 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 	import DistinguishedFileIcon from './DistinguishedFileIcon.svelte';
-	import { type FileInfo } from './FileInfo';
+	import { type FSDirEntry } from './files.model';
 	import FileRow from './FileRow.svelte';
 
-	let { selectedFiles = $bindable([]) }: { selectedFiles: FileInfo[] } = $props();
+	let { selectedFiles = $bindable([]) }: { selectedFiles: FSDirEntry[] } = $props();
 
 	function getCurrentDir(): string[] {
 		const savedDir = localStorage.getItem(LS_KEY);
@@ -25,7 +25,7 @@
 	}
 
 	const LS_KEY = 'bluestudio-files-dir';
-	let files: FileInfo[] = $state([]);
+	let files: FSDirEntry[] = $state([]);
 	let currentDir = $state(getCurrentDir());
 	const searchedDir = $derived(currentDir.join('/'));
 
@@ -35,7 +35,7 @@
 
 	async function fetchFiles(dir: string) {
 		try {
-			files = await invoke<FileInfo[]>('list_files', { dir }).then((files) =>
+			files = await invoke<FSDirEntry[]>('list_files', { dir }).then((files) =>
 				files.sort((a, b) => a.name.localeCompare(b.name))
 			);
 		} catch (error) {
@@ -43,7 +43,7 @@
 		}
 	}
 
-	function openFile(file: FileInfo) {
+	function openFile(file: FSDirEntry) {
 		if (file.is_dir) {
 			currentDir.push(file.name);
 			return;

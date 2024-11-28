@@ -17,7 +17,7 @@ impl ProjectFilesService {
         }
     }
 
-    pub fn get_project_files(
+    pub async fn get_project_files(
         &self,
         conn: &mut SqliteConnection,
         project_id: &str,

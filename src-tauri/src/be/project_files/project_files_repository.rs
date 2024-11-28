@@ -1,13 +1,10 @@
 use crate::be::file_system::file_info;
 use crate::models::ProjectFile;
 use crate::schema::project_files;
-// use crate::schema::project_files::dsl::*;
-use base64::encode;
 use diesel::prelude::*;
-use image::codecs::png::PngEncoder;
 use image::{ColorType, ImageBuffer, ImageEncoder, RgbImage};
 use serde::Serialize;
-use std::io::Cursor;
+use std::path::Path;
 use uuid::Uuid;
 
 extern crate ffmpeg_next as ffmpeg;
@@ -16,7 +13,6 @@ use ffmpeg::format::{input, Pixel};
 use ffmpeg::media::Type;
 use ffmpeg::software::scaling::{context::Context, flag::Flags};
 use ffmpeg::util::frame::video::Video;
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -26,13 +22,14 @@ pub struct ProjectFilesRepository;
 pub struct Frame {
     pub id: String,
     pub name: String,
-    pub data: String,
+    pub path: String,
 }
 
 #[derive(Serialize, Debug)]
 pub struct ProjectFileQuery {
     pub project_file: ProjectFile,
     pub frames: Vec<Frame>,
+    pub duration: f64,
 }
 
 impl ProjectFilesRepository {
@@ -56,20 +53,25 @@ impl ProjectFilesRepository {
         let project_files = project_files::table
             .filter(project_files::project_id.eq(searched_project_id))
             .order(project_files::columns::created_at.desc())
-            .load::<ProjectFile>(conn);
+            .load::<ProjectFile>(conn)
+            .expect("Failed to load project files");
+
+        println!("Amount of project files: {}", project_files.len());
 
         let mut project_file_queries = Vec::new();
-        project_files?.iter().for_each(|project_file| {
-            match ProjectFilesRepository::extract_frames(&project_file.path) {
+        for project_file in &project_files {
+            match ProjectFilesRepository::extract_frames(&searched_project_id, &project_file.path) {
                 Ok(frames) => project_file_queries.push(ProjectFileQuery {
                     project_file: project_file.clone(),
                     frames,
+                    duration: ProjectFilesRepository::get_duration(&project_file.path)
+                        .expect("Failed to get duration"),
                 }),
                 Err(e) => eprintln!("Failed to extract frames: {}", e),
             }
+        }
 
-            Ok::<(), Box<dyn std::error::Error>>(());
-        });
+        print!("project_file_queries: {:?}", &project_file_queries.len());
 
         Ok(project_file_queries)
     }
@@ -97,8 +99,68 @@ impl ProjectFilesRepository {
         Ok(new_project_file)
     }
 
-    pub fn extract_frames(video_path: &str) -> Result<Vec<Frame>, Box<dyn std::error::Error>> {
-        print!("decoder 0");
+    pub fn get_duration(video_path: &str) -> Result<f64, Box<dyn std::error::Error>> {
+        ffmpeg::init()?;
+
+        let mut duration = 0.0;
+        if let Ok(mut ictx) = input(&video_path) {
+            let input = ictx
+                .streams()
+                .best(Type::Video)
+                .ok_or(ffmpeg::Error::StreamNotFound)
+                .expect("Failed to find video stream");
+
+            // Calculate duration in milliseconds
+            let time_base = input.time_base();
+            duration = input.duration() as f64
+                * (time_base.numerator() as f64 / time_base.denominator() as f64)
+                * 1000.0;
+        }
+
+        Ok(duration)
+    }
+
+    pub fn extract_frames(
+        searched_project_id: &str,
+        video_path: &str,
+    ) -> Result<Vec<Frame>, Box<dyn std::error::Error>> {
+        let video_name = video_path.split('/').last().unwrap();
+        let frame_dir = format!(
+            "tmp_bstd_data/project_{}/{}/",
+            searched_project_id, video_name
+        );
+
+        // Check if frames already exist
+        if Path::new(&frame_dir).exists() {
+            let mut frames = Vec::new();
+            for entry in std::fs::read_dir(&frame_dir)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.is_file() {
+                    let frame_index = path
+                        .file_stem()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .replace("frame", "")
+                        .parse::<usize>()
+                        .unwrap();
+                    frames.push(Frame {
+                        id: frame_index.to_string(),
+                        name: format!("frame_{}", frame_index),
+                        path: path.to_string_lossy().to_string(),
+                    });
+                }
+            }
+            frames.sort_by(|a, b| {
+                a.id.parse::<usize>()
+                    .unwrap()
+                    .cmp(&b.id.parse::<usize>().unwrap())
+            });
+            return Ok(frames);
+        }
+
+        // If frames do not exist, run the decoder
         ffmpeg::init()?;
 
         let mut frames = Vec::new();
@@ -106,10 +168,10 @@ impl ProjectFilesRepository {
             let input = ictx
                 .streams()
                 .best(Type::Video)
-                .ok_or(ffmpeg::Error::StreamNotFound)?;
+                .ok_or(ffmpeg::Error::StreamNotFound)
+                .expect("Failed to find video stream");
             let video_stream_index = input.index();
 
-            print!("input parameters: {:?}", input);
             let context_decoder =
                 ffmpeg::codec::context::Context::from_parameters(input.parameters())?;
             let mut decoder = context_decoder.decoder().video()?;
@@ -130,16 +192,18 @@ impl ProjectFilesRepository {
                 |decoder: &mut ffmpeg::decoder::Video| -> Result<(), ffmpeg::Error> {
                     let mut decoded = Video::empty();
                     while decoder.receive_frame(&mut decoded).is_ok() {
-                        print!("received frame {} \n", frame_index);
                         let mut rgb_frame = Video::empty();
-                        scaler.run(&decoded, &mut rgb_frame)?;
+                        scaler
+                            .run(&decoded, &mut rgb_frame)
+                            .expect("Failed to run scaler");
 
-                        let img_base64 = encode(&rgb_frame.data(0));
+                        let path = format!("{}frame{}.ppm", frame_dir, frame_index);
+                        save_file(&rgb_frame, &path).unwrap();
 
                         frames.push(Frame {
                             id: frame_index.to_string(),
                             name: format!("frame_{}", frame_index),
-                            data: img_base64,
+                            path,
                         });
 
                         frame_index += 1;
@@ -153,51 +217,24 @@ impl ProjectFilesRepository {
                     receive_and_process_decoded_frames(&mut decoder)?;
                 }
             }
+
             decoder.send_eof()?;
             receive_and_process_decoded_frames(&mut decoder)?;
         }
 
         Ok(frames)
     }
+}
 
-    // pub fn update_account(
-    //     &self,
-    //     conn: &mut SqliteConnection,
-    //     account_update: AccountUpdate, // Assuming AccountUpdate is the struct for updating account data
-    // ) -> Result<Account, diesel::result::Error> {
-    //     use crate::schema::accounts::dsl::*;
+fn save_file(frame: &Video, path: &str) -> std::result::Result<(), std::io::Error> {
+    let path = Path::new(path);
 
-    //     // Clone the id before unwrapping it
-    //     let account_id = account_update.id.clone().unwrap();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
 
-    //     diesel::update(accounts.find(account_id))
-    //         .set(&account_update)
-    //         .execute(conn)?;
-
-    //     accounts
-    //         .filter(id.eq(account_update.id.unwrap()))
-    //         .first(conn)
-    // }
-
-    // pub fn delete_account(
-    //     &self,
-    //     conn: &mut SqliteConnection,
-    //     account_id: String, // ID of the account to delete
-    // ) -> Result<usize, diesel::result::Error> {
-    //     use crate::schema::accounts::dsl::*;
-
-    //     diesel::delete(accounts.filter(id.eq(account_id))).execute(conn)
-    // }
-
-    // pub fn load_accounts_by_ids(
-    //     &self,
-    //     conn: &mut SqliteConnection,
-    //     account_ids: &[String],
-    // ) -> Result<Vec<Account>, diesel::result::Error> {
-    //     accounts
-    //         .filter(id.eq_any(account_ids))
-    //         .filter(is_active.eq(true))
-    //         .order(created_at.desc())
-    //         .load::<Account>(conn)
-    // }
+    let mut file = File::create(path).expect("Failed to create file");
+    file.write_all(format!("P6\n{} {}\n255\n", frame.width(), frame.height()).as_bytes())?;
+    file.write_all(frame.data(0))?;
+    Ok(())
 }
