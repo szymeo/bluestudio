@@ -27,12 +27,19 @@
 	</div>
 
 	<div class="w-full h-full flex flex-col px-3 py-3 gap-2">
-		<div class="bg-gray-900 flex items-center justify-center rounded-md select-none h-1/3">
-			<ProjectFilesManager />
-			<Player />
+		<div class="flex items-center justify-center rounded-md select-none h-1/2 gap-2">
+			<div class="bg-gray-900/90 border border-gray-800/50 h-full rounded-md">
+				<ProjectFilesManager />
+			</div>
+
+			<div class="bg-gray-900/90 border border-gray-800/50 h-full w-full rounded-md">
+				<Player />
+			</div>
 		</div>
 
-		<div class="col-span-2 bg-gray-900 rounded-md h-full select-none">
+		<div
+			class="col-span-2 bg-gray-900/90 border border-gray-800/50 rounded-md h-full select-none"
+		>
 			<Timeline />
 		</div>
 	</div>

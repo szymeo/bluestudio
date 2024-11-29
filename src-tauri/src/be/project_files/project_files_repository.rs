@@ -110,7 +110,6 @@ impl ProjectFilesRepository {
                 .ok_or(ffmpeg::Error::StreamNotFound)
                 .expect("Failed to find video stream");
 
-            // Calculate duration in milliseconds
             let time_base = input.time_base();
             duration = input.duration() as f64
                 * (time_base.numerator() as f64 / time_base.denominator() as f64)
